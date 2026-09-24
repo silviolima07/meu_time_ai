@@ -2,6 +2,13 @@ from pathlib import Path
 import os
 import asyncio
 
+import tempfile
+import numpy as np
+import soundfile as sf
+
+from faster_whisper import WhisperModel
+from kokoro import KPipeline
+
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
@@ -41,8 +48,257 @@ if not TELEGRAM_BOT_TOKEN:
 
 
 # ============================================================
+# MODELOS DE ÁUDIO
+# ============================================================
+
+print("\nCarregando modelo Whisper...")
+
+modelo_whisper = WhisperModel(
+    "base",
+    device="cpu",
+    compute_type="int8"
+)
+
+print("[OK] Whisper carregado.")
+
+
+print("\nCarregando Kokoro...")
+
+modelo_tts = KPipeline(
+    lang_code="p",
+    repo_id="hexgrad/Kokoro-82M"
+)
+
+print("[OK] Kokoro carregado.")
+
+
+# ============================================================
+# PREFERÊNCIAS
+# ============================================================
+
+preferencias_resposta = {}
+
+
+def obter_modo_resposta(user_id: int) -> str:
+
+    return preferencias_resposta.get(
+        user_id,
+        "texto"
+    )
+
+
+async def modo_texto(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    user_id = update.effective_user.id
+
+    preferencias_resposta[user_id] = "texto"
+
+    await update.message.reply_text(
+        "💬 Modo de resposta alterado para texto."
+    )
+
+
+async def modo_audio(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    user_id = update.effective_user.id
+
+    preferencias_resposta[user_id] = "audio"
+
+    await update.message.reply_text(
+        "🔊 Modo de resposta alterado para áudio."
+    )
+
+# Funçoes auxiliares
+
+def transcrever_audio(
+    arquivo_audio: str
+) -> str:
+
+    segments, _ = modelo_whisper.transcribe(
+        arquivo_audio,
+        language="pt"
+    )
+
+    texto = " ".join(
+        segment.text.strip()
+        for segment in segments
+    )
+
+    return texto.strip()
+
+
+def gerar_audio(
+    texto: str,
+    arquivo_saida: str
+):
+
+    generator = modelo_tts(
+        texto,
+        voice="pf_dora",
+        speed=1.0
+    )
+
+    partes = []
+
+    for _, _, audio in generator:
+        partes.append(audio)
+
+    if not partes:
+        raise RuntimeError(
+            "Kokoro não gerou áudio."
+        )
+
+    audio_final = np.concatenate(
+        partes
+    )
+
+    sf.write(
+        arquivo_saida,
+        audio_final,
+        24000
+    )
+
+# Função enviar a resposta
+
+async def enviar_resposta(
+    update: Update,
+    resposta: str
+):
+
+    user_id = update.effective_user.id
+
+    modo = obter_modo_resposta(
+        user_id
+    )
+
+    if modo == "texto":
+
+        await update.message.reply_text(
+            "⚽ Meu Time IA\n\n"
+            f"{resposta}",
+            parse_mode="Markdown"
+        )
+
+        return
+
+    with tempfile.TemporaryDirectory() as pasta:
+
+        arquivo_audio = (
+            Path(pasta)
+            / "resposta.wav"
+        )
+
+        await asyncio.to_thread(
+            gerar_audio,
+            resposta,
+            str(arquivo_audio)
+        )
+
+        with open(
+            arquivo_audio,
+            "rb"
+        ) as audio:
+
+            await update.message.reply_audio(
+                audio=audio,
+                title="Meu Time IA"
+            )
+
+# Função receber a resposta
+
+resposta = await asyncio.to_thread(
+    processar_pergunta,
+    pergunta
+)
+
+await enviar_resposta(
+    update,
+    resposta
+)
+
+# Audio vindo do Telegram
+
+async def receber_audio(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+
+    if not update.message:
+        return
+
+    if not update.message.voice:
+        return
+
+    await update.message.reply_text(
+        "🎙️ Áudio recebido. Transcrevendo..."
+    )
+
+    try:
+
+        arquivo_telegram = (
+            await context.bot.get_file(
+                update.message.voice.file_id
+            )
+        )
+
+        with tempfile.TemporaryDirectory() as pasta:
+
+            arquivo_audio = (
+                Path(pasta)
+                / "pergunta.ogg"
+            )
+
+            await arquivo_telegram.download_to_drive(
+                custom_path=str(arquivo_audio)
+            )
+
+            pergunta = await asyncio.to_thread(
+                transcrever_audio,
+                str(arquivo_audio)
+            )
+
+            print(
+                f"\nPergunta transcrita: {pergunta}"
+            )
+
+            await update.message.reply_text(
+                "📝 Entendi:\n"
+                f"{pergunta}"
+            )
+
+            resposta = await asyncio.to_thread(
+                processar_pergunta,
+                pergunta
+            )
+
+            await enviar_resposta(
+                update,
+                resposta
+            )
+
+    except Exception as erro:
+
+        print(
+            f"\n[ERRO ÁUDIO] {erro}"
+        )
+
+        await update.message.reply_text(
+            "Não consegui processar o áudio."
+        )
+
+
+
+
+# ============================================================
 # PROCESSAR PERGUNTA
 # ============================================================
+
 
 def processar_pergunta(pergunta: str) -> str:
 
@@ -87,10 +343,12 @@ async def start(
 ):
 
     await update.message.reply_text(
-        "⚽ Meu Time IA\n\n"
-        "Olá! Pergunte algo sobre o seu time."
-    )
-
+    "⚽ Meu Time IA\n\n"
+    "Você pode fazer perguntas por texto ou áudio.\n\n"
+    "💬 /texto - receber respostas em texto\n"
+    "🔊 /audio - receber respostas em áudio\n\n"
+    "O modo padrão é texto."
+)
 
 # ============================================================
 # RECEBER MENSAGENS
@@ -133,14 +391,9 @@ async def receber_mensagem(
             pergunta
         )
 
-        resposta_telegram = (
-            "⚽ Meu Time IA\n\n"
-            f"{resposta}"
-        )
-
-        await update.message.reply_text(
-            resposta_telegram,
-            parse_mode="Markdown"
+        await enviar_resposta(
+            update,
+            resposta
         )
 
         print(
@@ -154,10 +407,8 @@ async def receber_mensagem(
         )
 
         await update.message.reply_text(
-            "Ocorreu um erro ao processar sua pergunta."
-        )
-
-
+           "Ocorreu um erro ao processar sua pergunta."
+         )
 # ============================================================
 # ERROS
 # ============================================================
@@ -206,6 +457,20 @@ def main():
             "start",
             start
         )
+    )
+
+    application.add_handler(
+        CommandHandler(
+        "texto",
+        modo_texto
+       )
+    )
+    
+    application.add_handler(
+       CommandHandler(
+         "audio",
+          modo_audio
+       )
     )
 
     application.add_handler(
