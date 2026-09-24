@@ -1,4 +1,7 @@
+
 from pathlib import Path
+
+
 import sys
 
 from faster_whisper import WhisperModel
@@ -16,6 +19,8 @@ sys.path.insert(
     0,
     str(ROOT / "scripts")
 )
+
+print("Inicializando o assistente, aguarde...")
 
 from rag_core import (
     busca_hibrida,
