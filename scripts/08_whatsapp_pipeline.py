@@ -385,6 +385,40 @@ def buscar_mensagens():
 
     return []
 
+def extrair_destinatario(mensagem):
+
+    key = mensagem.get(
+        "key",
+        {}
+    )
+
+    remote_jid = key.get(
+        "remoteJid",
+        ""
+    )
+
+    remote_jid_alt = key.get(
+        "remoteJidAlt",
+        ""
+    )
+
+    print(
+        f"[DEBUG] remoteJid: {remote_jid}"
+    )
+
+    print(
+        f"[DEBUG] remoteJidAlt: {remote_jid_alt}"
+    )
+
+    # Preferir o identificador original usado na mensagem
+    if remote_jid:
+        return remote_jid
+
+    if remote_jid_alt:
+        return remote_jid_alt
+
+    return None
+
 # ============================================================
 # ENVIAR WHATSAPP
 # ============================================================
@@ -678,14 +712,15 @@ def main():
                     continue
 
 
-                numero = extrair_numero(
-                    mensagem
-                )
+                #numero = extrair_numero(
+                #    mensagem
+                #)
 
+                destinatario = extrair_destinatario(mensagem) 
 
-                if not numero:
+                #if not numero:
 
-                    continue
+                #    continue
                 
                 
                 #print(
@@ -696,10 +731,10 @@ def main():
                     "\n" + "-" * 70
                 )
 
-                print(
-                    f"Mensagem de:"
-                    f" {numero}"
-                )
+                #print(
+                #    f"Mensagem de:"
+                #    f" {numero}"
+                #)
 
                 print(
                     f"Pergunta:"
@@ -731,7 +766,8 @@ def main():
                 )
                 
                 enviar_mensagem(
-                    numero,
+                    #numero,
+                    destinatario,
                     resposta_whatsapp
                 )
 
