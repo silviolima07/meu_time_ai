@@ -19,16 +19,12 @@ from telegram.ext import (
     filters,
 )
 
-print("Inicializando RAG, aguarde...")
-
 from rag_core import (
     busca_hibrida,
     montar_contexto,
     perguntar_llm,
     salvar_log,
 )
-
-print("[OK] RAG inicializado.")
 
 
 # ============================================================
@@ -214,6 +210,18 @@ async def enviar_resposta(
                 title="Meu Time IA"
             )
 
+# Função receber a resposta
+
+resposta = await asyncio.to_thread(
+    processar_pergunta,
+    pergunta
+)
+
+await enviar_resposta(
+    update,
+    resposta
+)
+
 # Audio vindo do Telegram
 
 async def receber_audio(
@@ -335,12 +343,12 @@ async def start(
 ):
 
     await update.message.reply_text(
-        "⚽ Meu Time IA\n\n"
-        "Você pode fazer perguntas por texto ou áudio.\n\n"
-        "💬 /texto - receber respostas em texto\n"
-        "🔊 /audio - receber respostas em áudio\n\n"
-        "O modo padrão é texto."
-    )
+    "⚽ Meu Time IA\n\n"
+    "Você pode fazer perguntas por texto ou áudio.\n\n"
+    "💬 /texto - receber respostas em texto\n"
+    "🔊 /audio - receber respostas em áudio\n\n"
+    "O modo padrão é texto."
+)
 
 # ============================================================
 # RECEBER MENSAGENS
@@ -399,8 +407,8 @@ async def receber_mensagem(
         )
 
         await update.message.reply_text(
-            "Ocorreu um erro ao processar sua pergunta."
-        )
+           "Ocorreu um erro ao processar sua pergunta."
+         )
 # ============================================================
 # ERROS
 # ============================================================
@@ -453,23 +461,16 @@ def main():
 
     application.add_handler(
         CommandHandler(
-            "texto",
-            modo_texto
-        )
+        "texto",
+        modo_texto
+       )
     )
     
     application.add_handler(
-        CommandHandler(
-            "audio",
-            modo_audio
-        )
-    )
-
-    application.add_handler(
-        MessageHandler(
-            filters.VOICE,
-            receber_audio
-        )
+       CommandHandler(
+         "audio",
+          modo_audio
+       )
     )
 
     application.add_handler(
