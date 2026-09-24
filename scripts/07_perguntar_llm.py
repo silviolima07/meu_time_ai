@@ -32,7 +32,7 @@ GROQ_URL = (
     "https://api.groq.com/openai/v1/chat/completions"
 )
 
-GROQ_MODEL = "openai/gpt-oss-20b"
+GROQ_MODEL =  LLM_MODEL
 
 
 # ------------------------------------------------------------

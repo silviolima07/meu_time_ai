@@ -216,3 +216,13 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+
+
+
+# Banco vetorial local
+chroma_db/
+
+# Logs
+logs/*.jsonl
+
