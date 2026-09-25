@@ -9,6 +9,9 @@ import soundfile as sf
 from faster_whisper import WhisperModel
 from kokoro import KPipeline
 
+import subprocess
+from io import BytesIO
+
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import (
@@ -137,13 +140,61 @@ def transcrever_audio(
     return texto.strip()
 
 
+import re
+
+def limpar_markdown_para_audio(texto: str) -> str:
+    texto = re.sub(r"\*\*(.*?)\*\*", r"\1", texto)
+    texto = re.sub(r"\*(.*?)\*", r"\1", texto)
+    texto = re.sub(r"`(.*?)`", r"\1", texto)
+    texto = re.sub(r"#+\s*", "", texto)
+
+    return texto.strip()
+
+
+import re
+
+
+def limpar_markdown(texto: str) -> str:
+
+    texto = re.sub(
+        r"\*\*(.*?)\*\*",
+        r"\1",
+        texto
+    )
+
+    texto = re.sub(
+        r"\*(.*?)\*",
+        r"\1",
+        texto
+    )
+
+    texto = re.sub(
+        r"`(.*?)`",
+        r"\1",
+        texto
+    )
+
+    texto = re.sub(
+        r"^#+\s*",
+        "",
+        texto,
+        flags=re.MULTILINE
+    )
+
+    return texto.strip()
+
+
+
 def gerar_audio(
     texto: str,
     arquivo_saida: str
 ):
+    texto_limpo = limpar_markdown_para_audio(
+       texto
+    )
 
     generator = modelo_tts(
-        texto,
+        texto_limpo,
         voice="pf_dora",
         speed=1.0
     )
@@ -180,39 +231,71 @@ async def enviar_resposta(
     modo = obter_modo_resposta(
         user_id
     )
+    
+    print(f"[DEBUG] Modo de Resposta: {modo}")
+
+    resposta_limpa = limpar_markdown(
+        resposta
+    )
 
     if modo == "texto":
-
+        print("[DEBUG]	 Enviando resposta em texto")
         await update.message.reply_text(
             "⚽ Meu Time IA\n\n"
-            f"{resposta}",
-            parse_mode="Markdown"
+            f"{resposta_limpa}"
         )
 
         return
+    
+    print(f"[DEBUG] Entrando na geração de aúdio.")
 
     with tempfile.TemporaryDirectory() as pasta:
 
-        arquivo_audio = (
-            Path(pasta)
-            / "resposta.wav"
-        )
+        arquivo_audio = Path(pasta) / "resposta.wav"
+
+        print(f"[DEBUG] Gerando arquivo: {arquivo_audio}")
+
+        arquivo_wav = Path(pasta) / "resposta.wav"
+        arquivo_ogg = Path(pasta) / "resposta.ogg"
 
         await asyncio.to_thread(
             gerar_audio,
-            resposta,
-            str(arquivo_audio)
+            resposta_limpa,
+            str(arquivo_wav)
+        )
+        
+        print("[DEBUG]  Áudio gerado")
+ 
+        subprocess.run(
+        [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(arquivo_wav),
+        "-c:a",
+        "libopus",
+        str(arquivo_ogg)
+        ],
+        check=True
+        ) 
+
+        with open(arquivo_ogg, "rb") as f:
+            dados_audio = f.read()
+
+        audio = BytesIO(dados_audio)
+        audio.name = "resposta.ogg"
+        
+        print("[DEBUG] Enviando Áudio para Telegram")
+
+        await update.message.reply_voice(
+            voice=audio
         )
 
-        with open(
-            arquivo_audio,
-            "rb"
-        ) as audio:
+        print("[OK] Mensagem de voz enviada.") 
 
-            await update.message.reply_audio(
-                audio=audio,
-                title="Meu Time IA"
-            )
+        print("[DEBUG] Áudio enviado")
+ 
+
 
 # Audio vindo do Telegram
 
