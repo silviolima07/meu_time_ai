@@ -226,3 +226,5 @@ chroma_db/
 # Logs
 logs/*.jsonl
 
+# onnx
+*.onnx
