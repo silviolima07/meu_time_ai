@@ -1,6 +1,6 @@
 # ⚽ Meu Time IA
 
-Assistente inteligente sobre futebol desenvolvido com **RAG (Retrieval-Augmented Generation)**, busca híbrida, Telegram e suporte a interação por **texto e voz**.
+Assistente inteligente sobre futebol desenvolvido com **RAG (Retrieval-Augmented Generation)**, busca híbrida, Telegram e suporte à interação por **texto e voz**.
 
 O projeto utiliza uma base de conhecimento própria sobre o Flamengo e combina recuperação lexical e semântica antes de enviar o contexto para uma LLM.
 
@@ -115,6 +115,9 @@ O fluxo principal da aplicação é:
                                ┌─────────────────┐
                                │    Telegram     │
                                └─────────────────┘
+```
+
+---
 
 # 🔎 RAG com busca híbrida
 
@@ -264,15 +267,11 @@ Depois disso a resposta segue o modo escolhido pelo usuário.
 
 # 🔊 Respostas em áudio
 
-O sistema utiliza atualmente: **Piper TTS**.
-
-para transformar a resposta gerada pela LLM em voz.
+O sistema utiliza atualmente: **Piper TTS** para transformar a resposta gerada pela LLM em voz.
 
 O Piper gera inicialmente um arquivo: **WAV**.
 
-Depois o FFmpeg converte o áudio para: **OGG / Opus**.
-
-formato adequado para envio como mensagem de voz no Telegram.
+Depois, o FFmpeg converte o áudio para **OGG / Opus**, formato adequado para envio como mensagem de voz no Telegram.
 
 ---
 
@@ -280,7 +279,7 @@ formato adequado para envio como mensagem de voz no Telegram.
 
 A primeira implementação utilizava **Kokoro TTS**.
 
-Durante os testes foi identificado um grande gargalo de desempenho em CPU.
+Durante os testes, foi identificado um grande gargalo de desempenho em CPU.
 
 Foram observados tempos como:
 
@@ -324,7 +323,7 @@ Outra otimização importante foi separar o comportamento da LLM conforme o tipo
 
 Uma resposta adequada para leitura nem sempre é adequada para áudio.
 
-Por isso, o sistema informa à LLM se o usuário está no modo: **texto** ou **áudio**.
+Por isso, o sistema informa à LLM se o usuário está no modo **texto** ou **áudio**.
 
 ## Modo texto
 
@@ -431,9 +430,7 @@ scripts/
 └── rag_core.py
 ```
 
-O arquivo: **rag_core.py**.
-
-centraliza os principais componentes utilizados pelo pipeline atual.
+O arquivo **rag_core.py** centraliza os principais componentes utilizados pelo pipeline atual.
 
 ---
 
