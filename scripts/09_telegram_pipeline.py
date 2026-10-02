@@ -71,25 +71,6 @@ print("[OK] Whisper carregado.")
 
 modelo_tts = None
 
-#def obter_modelo_tts():
-#    global modelo_tts
-
-#    if modelo_tts is None:
-#        print("Carregando Kokoro...", flush=True)
-
-#        from kokoro import KPipeline
-
-#        modelo_tts = KPipeline(
-#            lang_code="p",
-#            repo_id="hexgrad/Kokoro-82M"
-#        )
-#
-#        print("[OK] Kokoro carregado.", flush=True)
-#
-#    return modelo_tts
-
-
-
 
 # ============================================================
 # PREFERÊNCIAS
@@ -195,51 +176,14 @@ def limpar_markdown(texto: str) -> str:
 
     return texto.strip()
 
-
-
-#def gerar_audio_kokoro(
-#    texto: str,
-#    arquivo_saida: str
-#):
-#    texto_limpo = limpar_markdown_para_audio(
-#       texto
-#    )
-#
-#    tts = obter_modelo_tts()
-#
-#    generator = tts(
-#        texto_limpo,
-#        voice="pf_dora"
-#    )
-#
-#    partes = []
-#
-#    for _, _, audio in generator:
-#        partes.append(audio)
-#
-#    if not partes:
-#        raise RuntimeError(
-#            "Kokoro não gerou áudio."
-#        )
-#
-#    audio_final = np.concatenate(
-#        partes
-#    )
-#
-#    sf.write(
-#        arquivo_saida,
-#        audio_final,
-#        24000
-#    )
-
 # Piper
 
 PIPER_MODEL = (
     Path(__file__).resolve().parent.parent
     / "modelos"
     / "piper"
-    / "pt_BR-cadu-medium"
-    / "pt_BR-cadu-medium.onnx"
+    / "pt_BR-faber-medium"
+    / "pt_BR-faber-medium.onnx"
 )
 
 def gerar_audio(texto: str, arquivo_saida: str):
