@@ -115,8 +115,6 @@ O fluxo principal da aplicação é:
                                ┌─────────────────┐
                                │    Telegram     │
                                └─────────────────┘
-							   
-
 
 # 🔎 RAG com busca híbrida
 
@@ -141,17 +139,9 @@ Esse mecanismo é especialmente útil para:
 
 A segunda busca utiliza embeddings para localizar trechos semanticamente relacionados à pergunta.
 
-O modelo utilizado é:
+O modelo utilizado é: **sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2**.
 
-```text
-sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
-```
-
-Os vetores são armazenados no:
-
-```text
-ChromaDB
-```
+Os vetores são armazenados no: **ChromaDB**.
 
 Isso permite encontrar informações relacionadas ao significado da pergunta mesmo quando as mesmas palavras não aparecem literalmente no documento.
 
@@ -198,11 +188,7 @@ Documentação detalhada:
 
 Após o ranking final, os melhores chunks são utilizados para montar o contexto enviado à LLM.
 
-O modelo é acessado através da:
-
-```text
-Groq API
-```
+O modelo é acessado através da: **Groq API**.
 
 A LLM recebe:
 
@@ -247,11 +233,7 @@ O modo padrão é texto.
 
 O usuário também pode enviar uma mensagem de voz.
 
-A transcrição é realizada localmente com:
-
-```text
-Faster Whisper
-```
+A transcrição é realizada localmente com: **Faster Whisper**.
 
 Configuração utilizada:
 
@@ -282,25 +264,13 @@ Depois disso a resposta segue o modo escolhido pelo usuário.
 
 # 🔊 Respostas em áudio
 
-O sistema utiliza atualmente:
-
-```text
-Piper TTS
-```
+O sistema utiliza atualmente: **Piper TTS**.
 
 para transformar a resposta gerada pela LLM em voz.
 
-O Piper gera inicialmente um arquivo:
+O Piper gera inicialmente um arquivo: **WAV**.
 
-```text
-WAV
-```
-
-Depois o FFmpeg converte o áudio para:
-
-```text
-OGG / Opus
-```
+Depois o FFmpeg converte o áudio para: **OGG / Opus**.
 
 formato adequado para envio como mensagem de voz no Telegram.
 
@@ -354,17 +324,7 @@ Outra otimização importante foi separar o comportamento da LLM conforme o tipo
 
 Uma resposta adequada para leitura nem sempre é adequada para áudio.
 
-Por isso, o sistema informa à LLM se o usuário está no modo:
-
-```text
-texto
-```
-
-ou:
-
-```text
-áudio
-```
+Por isso, o sistema informa à LLM se o usuário está no modo: **texto** ou **áudio**.
 
 ## Modo texto
 
@@ -471,11 +431,7 @@ scripts/
 └── rag_core.py
 ```
 
-O arquivo:
-
-```text
-rag_core.py
-```
+O arquivo: **rag_core.py**.
 
 centraliza os principais componentes utilizados pelo pipeline atual.
 
@@ -727,4 +683,3 @@ Entre as possibilidades de expansão do projeto estão:
 **Silvio Lima**
 
 Projeto desenvolvido como estudo prático de **AI Engineering, RAG e IA Generativa**.
-
