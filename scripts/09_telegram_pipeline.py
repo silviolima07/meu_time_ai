@@ -7,10 +7,10 @@ import numpy as np
 import soundfile as sf
 
 from faster_whisper import WhisperModel
-from kokoro import KPipeline
 
 import subprocess
 from io import BytesIO
+
 
 from dotenv import load_dotenv
 from telegram import Update
@@ -69,14 +69,26 @@ modelo_whisper = WhisperModel(
 print("[OK] Whisper carregado.")
 
 
-print("\nCarregando Kokoro...")
+modelo_tts = None
 
-modelo_tts = KPipeline(
-    lang_code="p",
-    repo_id="hexgrad/Kokoro-82M"
-)
+#def obter_modelo_tts():
+#    global modelo_tts
 
-print("[OK] Kokoro carregado.")
+#    if modelo_tts is None:
+#        print("Carregando Kokoro...", flush=True)
+
+#        from kokoro import KPipeline
+
+#        modelo_tts = KPipeline(
+#            lang_code="p",
+#            repo_id="hexgrad/Kokoro-82M"
+#        )
+#
+#        print("[OK] Kokoro carregado.", flush=True)
+#
+#    return modelo_tts
+
+
 
 
 # ============================================================
@@ -185,39 +197,65 @@ def limpar_markdown(texto: str) -> str:
 
 
 
-def gerar_audio(
-    texto: str,
-    arquivo_saida: str
-):
-    texto_limpo = limpar_markdown_para_audio(
-       texto
+#def gerar_audio_kokoro(
+#    texto: str,
+#    arquivo_saida: str
+#):
+#    texto_limpo = limpar_markdown_para_audio(
+#       texto
+#    )
+#
+#    tts = obter_modelo_tts()
+#
+#    generator = tts(
+#        texto_limpo,
+#        voice="pf_dora"
+#    )
+#
+#    partes = []
+#
+#    for _, _, audio in generator:
+#        partes.append(audio)
+#
+#    if not partes:
+#        raise RuntimeError(
+#            "Kokoro não gerou áudio."
+#        )
+#
+#    audio_final = np.concatenate(
+#        partes
+#    )
+#
+#    sf.write(
+#        arquivo_saida,
+#        audio_final,
+#        24000
+#    )
+
+# Piper
+
+PIPER_MODEL = (
+    Path(__file__).resolve().parent.parent
+    / "modelos"
+    / "piper"
+    / "pt_BR-cadu-medium"
+    / "pt_BR-cadu-medium.onnx"
+)
+
+def gerar_audio(texto: str, arquivo_saida: str):
+    subprocess.run(
+        [
+            "piper",
+            "--model",
+            str(PIPER_MODEL),
+            "--output_file",
+            arquivo_saida,
+        ],
+        input=texto,
+        text=True,
+        check=True,
     )
 
-    generator = modelo_tts(
-        texto_limpo,
-        voice="pf_dora",
-        speed=1.0
-    )
-
-    partes = []
-
-    for _, _, audio in generator:
-        partes.append(audio)
-
-    if not partes:
-        raise RuntimeError(
-            "Kokoro não gerou áudio."
-        )
-
-    audio_final = np.concatenate(
-        partes
-    )
-
-    sf.write(
-        arquivo_saida,
-        audio_final,
-        24000
-    )
 
 # Função enviar a resposta
 
@@ -257,6 +295,9 @@ async def enviar_resposta(
 
         arquivo_wav = Path(pasta) / "resposta.wav"
         arquivo_ogg = Path(pasta) / "resposta.ogg"
+        
+
+        t0 = time.perf_counter()
 
         await asyncio.to_thread(
             gerar_audio,
@@ -264,8 +305,14 @@ async def enviar_resposta(
             str(arquivo_wav)
         )
         
+        print(f"[TEMPO] Piper/TTS: "
+              f"{time.perf_counter() - t0:.2f}s"
+              )
+   
         print("[DEBUG]  Áudio gerado")
- 
+        
+        t0 = time.perf_counter()
+    
         subprocess.run(
         [
         "ffmpeg",
@@ -276,8 +323,14 @@ async def enviar_resposta(
         "libopus",
         str(arquivo_ogg)
         ],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         check=True
         ) 
+        
+        print(f"[TEMPO] FFmpeg: "
+              f"{time.perf_counter() - t0:.2f}s"
+              )
 
         with open(arquivo_ogg, "rb") as f:
             dados_audio = f.read()
@@ -286,10 +339,16 @@ async def enviar_resposta(
         audio.name = "resposta.ogg"
         
         print("[DEBUG] Enviando Áudio para Telegram")
-
+        
+        t0 = time.perf_counter()
+        
         await update.message.reply_voice(
             voice=audio
         )
+
+        print(f"[TEMPO] Envio Telegram: "
+              f"{time.perf_counter() - t0:.2f}s"
+              )
 
         print("[OK] Mensagem de voz enviada.") 
 
@@ -347,9 +406,12 @@ async def receber_audio(
                 f"{pergunta}"
             )
 
+            modo = obter_modo_resposta(update.effective_user.id)
+
             resposta = await asyncio.to_thread(
                 processar_pergunta,
-                pergunta
+                pergunta,
+                modo
             )
 
             await enviar_resposta(
@@ -373,9 +435,12 @@ async def receber_audio(
 # ============================================================
 # PROCESSAR PERGUNTA
 # ============================================================
+import  time
 
-
-def processar_pergunta(pergunta: str) -> str:
+def processar_pergunta(pergunta: str, modo_resposta: str = "texto") -> str:
+    
+    inicio_total= time.perf_counter()
+    t0 = time.perf_counter()
 
     print(
         f"\nPergunta recebida:"
@@ -392,11 +457,23 @@ def processar_pergunta(pergunta: str) -> str:
         resultados
     )
 
+    print(f"[TEMPO] Contexto: "
+          f"{time.perf_counter() - t0:.2f}s"
+          )
+
+    t0 = time.perf_counter()
+
     # LLM
     resposta = perguntar_llm(
         pergunta,
-        contexto
+        contexto,
+        modo_resposta
     )
+    print( f"[TEMPO] LLM: "
+           f"{time.perf_counter() - t0:.2f}s"
+          )
+    t0 = time.perf_counter()
+
 
     # Auditoria
     salvar_log(
@@ -404,12 +481,20 @@ def processar_pergunta(pergunta: str) -> str:
         resposta,
         resultados
     )
+    print(f"[TEMPO] Log: "
+          f"{time.perf_counter() - t0:.2f}s"
 
+           )
+    print(f"[TEMPO] Total: "
+           f"{time.perf_counter() - inicio_total:.2f}s"
+          )
     return resposta
 
 
 # ============================================================
 # COMANDO /start
+
+
 # ============================================================
 
 async def start(
@@ -461,9 +546,13 @@ async def receber_mensagem(
 
         # Executa o RAG em outra thread para não bloquear
         # o loop assíncrono do Telegram.
+
+        modo = obter_modo_resposta(update.effective_user.id)
+
         resposta = await asyncio.to_thread(
             processar_pergunta,
-            pergunta
+            pergunta,
+            modo
         )
 
         await enviar_resposta(

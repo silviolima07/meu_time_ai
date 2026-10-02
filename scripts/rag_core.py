@@ -604,10 +604,30 @@ def montar_contexto(
 
 def perguntar_llm(
     pergunta: str,
-    contexto: str
+    contexto: str,
+    modo_resposta: str
 ):
 
-    prompt_sistema = """
+    if modo_resposta == "audio":
+        instrucao_formato = """
+8. Como esta resposta será convertida em áudio:
+   - seja conciso;
+   - preserve todos os fatos essenciais para responder à pergunta;
+   - elimine repetições e detalhes secundários;
+   - prefira frases curtas e naturais para fala;
+   - evite listas muito longas;
+   - procure produzir uma resposta que possa ser falada
+     em aproximadamente 20 a 40 segundos;
+   - se a pergunta exigir muitos detalhes, priorize os pontos
+     mais importantes sem cortar frases ou informações no meio.
+"""
+    else:
+        instrucao_formato = """
+8. Responda com o nível de detalhe necessário para esclarecer
+   adequadamente a pergunta.
+"""
+    
+    prompt_sistema = f"""
 Você é o Meu Time IA, um assistente especializado no Flamengo.
 
 Responda somente com base no contexto fornecido.
@@ -625,6 +645,8 @@ Regras:
    existente no contexto.
 7. Não mencione chunks, embeddings, BM25,
    RRF ou banco vetorial para o usuário.
+
+{instrucao_formato}
 """
 
 
