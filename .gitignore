@@ -228,3 +228,7 @@ logs/*.jsonl
 
 # onnx
 *.onnx
+
+# Modelos de voz e experimentos locais
+/modelos/piper/pt_BR-faber-medium/
+/modelos_teste/
