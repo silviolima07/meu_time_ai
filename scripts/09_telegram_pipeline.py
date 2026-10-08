@@ -13,7 +13,8 @@ from io import BytesIO
 
 
 from dotenv import load_dotenv
-from telegram import Update
+from telegram import Update, BotCommand
+
 from telegram.ext import (
     Application,
     CommandHandler,
@@ -441,18 +442,39 @@ def processar_pergunta(pergunta: str, modo_resposta: str = "texto") -> str:
 
 # ============================================================
 
+MENSAGEM_INICIAL = (
+    "⚽ Bem-vindo ao Meu Time IA!\n\n"
+    "Pergunte sobre a história, títulos e ídolos do seu time.\n\n"
+    "📋 Comandos disponíveis:\n\n"
+    "💬 /texto - Receber respostas em texto\n"
+    "🔊 /audio - Receber respostas em áudio\n"
+    "❓ /ajuda - Mostrar os comandos\n\n"
+    "🎙️ Você também pode enviar perguntas por voz.\n\n"
+    "O modo padrão de resposta é texto."
+)
+
+
 async def start(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ):
+    await update.message.reply_text(MENSAGEM_INICIAL)
 
-    await update.message.reply_text(
-        "⚽ Meu Time IA\n\n"
-        "Você pode fazer perguntas por texto ou áudio.\n\n"
-        "💬 /texto - receber respostas em texto\n"
-        "🔊 /audio - receber respostas em áudio\n\n"
-        "O modo padrão é texto."
-    )
+
+async def ajuda(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    await update.message.reply_text(MENSAGEM_INICIAL)
+
+
+async def configurar_comandos(application):
+    await application.bot.set_my_commands([
+        BotCommand("start", "Iniciar o Meu Time IA"),
+        BotCommand("texto", "Receber respostas em texto"),
+        BotCommand("audio", "Receber respostas em áudio"),
+        BotCommand("ajuda", "Mostrar os comandos"),
+    ])
 
 # ============================================================
 # RECEBER MENSAGENS
@@ -559,6 +581,8 @@ def main():
         .token(TELEGRAM_BOT_TOKEN)
         .build()
     )
+    
+    application.post_init = configurar_comandos
 
     application.add_handler(
         CommandHandler(
@@ -567,6 +591,11 @@ def main():
         )
     )
 
+    application.add_handler(
+        CommandHandler("ajuda", ajuda)
+    )
+    
+    
     application.add_handler(
         CommandHandler(
             "texto",
