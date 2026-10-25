@@ -1,0 +1,29 @@
+{
+  "benchmark": "factual_v1.0",
+  "modelo_reranker": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1",
+  "top_k_final": 3,
+  "perguntas": 15,
+  "resultados": {
+    "RRF_baseline_5": {
+      "precision@3": 0.3777777777777778,
+      "recall@3": 0.7999999999999999,
+      "hit@3": 0.9333333333333333,
+      "mrr@3": 0.7777777777777778,
+      "latencia_media_segundos": null
+    },
+    "RRF_ampliado_10": {
+      "precision@3": 0.3777777777777778,
+      "recall@3": 0.7222222222222221,
+      "hit@3": 0.8,
+      "mrr@3": 0.7333333333333333,
+      "latencia_media_segundos": 0.7804133333333334
+    },
+    "RRF_reranker_10": {
+      "precision@3": 0.35555555555555557,
+      "recall@3": 0.6777777777777777,
+      "hit@3": 0.8,
+      "mrr@3": 0.7555555555555554,
+      "latencia_media_segundos": 4.10742
+    }
+  }
+}
