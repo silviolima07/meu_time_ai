@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="790" viewBox="0 0 1000 790">
+  <defs>
+    <marker id="seta" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L9,3 L0,6 Z" fill="#64748b"/>
+    </marker>
+    <style>
+      .titulo { font: bold 25px Arial, sans-serif; fill: #0f172a; }
+      .texto { font: 16px Arial, sans-serif; fill: #0f172a; }
+      .menor { font: 14px Arial, sans-serif; fill: #334155; }
+      .caixa { fill: #eff6ff; stroke: #2563eb; stroke-width: 2; rx: 12; }
+      .decisao { fill: #fef3c7; stroke: #d97706; stroke-width: 2; }
+      .sucesso { fill: #dcfce7; stroke: #16a34a; stroke-width: 2; rx: 12; }
+      .espera { fill: #f1f5f9; stroke: #64748b; stroke-width: 2; rx: 12; }
+      .linha { fill: none; stroke: #64748b; stroke-width: 2; marker-end: url(#seta); }
+    </style>
+  </defs>
+
+  <rect width="1000" height="790" fill="white"/>
+  <text x="500" y="42" text-anchor="middle" class="titulo">Meu Time IA — Seleção e Persistência de Times</text>
+
+  <rect x="340" y="75" width="320" height="55" class="caixa"/>
+  <text x="500" y="109" text-anchor="middle" class="texto">Telegram: /start ou /time</text>
+
+  <path d="M500 130 V160" class="linha"/>
+
+  <rect x="300" y="160" width="400" height="65" class="caixa"/>
+  <text x="500" y="186" text-anchor="middle" class="texto">Selecionar clube</text>
+  <text x="500" y="207" text-anchor="middle" class="menor">Flamengo | Santos | Internacional | Atlético-MG</text>
+
+  <path d="M500 225 V255" class="linha"/>
+
+  <rect x="320" y="255" width="360" height="65" class="caixa"/>
+  <text x="500" y="282" text-anchor="middle" class="texto">Callback: confirmar_time()</text>
+  <text x="500" y="303" text-anchor="middle" class="menor">salvar_time(user_id, time_id)</text>
+
+  <path d="M500 320 V350" class="linha"/>
+
+  <rect x="320" y="350" width="360" height="65" class="sucesso"/>
+  <text x="500" y="377" text-anchor="middle" class="texto">SQLite: usuarios.sqlite3</text>
+  <text x="500" y="398" text-anchor="middle" class="menor">Preferência persistente por usuário</text>
+
+  <path d="M500 415 V445" class="linha"/>
+
+  <rect x="320" y="445" width="360" height="60" class="caixa"/>
+  <text x="500" y="470" text-anchor="middle" class="texto">Pergunta por texto ou áudio</text>
+  <text x="500" y="491" text-anchor="middle" class="menor">obter_time(user_id)</text>
+
+  <path d="M500 505 V535" class="linha"/>
+
+  <polygon points="500,535 660,600 500,665 340,600" class="decisao"/>
+  <text x="500" y="605" text-anchor="middle" class="texto">Time é Flamengo?</text>
+
+  <path d="M340 600 H220 V680" class="linha"/>
+  <path d="M660 600 H780 V680" class="linha"/>
+
+  <text x="265" y="587" class="menor">Sim</text>
+  <text x="705" y="587" class="menor">Não</text>
+
+  <rect x="60" y="680" width="320" height="75" class="sucesso"/>
+  <text x="220" y="708" text-anchor="middle" class="texto">RAG Flamengo</text>
+  <text x="220" y="730" text-anchor="middle" class="menor">BM25 + Chroma + RRF + LLM</text>
+
+  <rect x="620" y="680" width="320" height="75" class="espera"/>
+  <text x="780" y="708" text-anchor="middle" class="texto">Base ainda indisponível</text>
+  <text x="780" y="730" text-anchor="middle" class="menor">Responder sem consultar o RAG</text>
+</svg>

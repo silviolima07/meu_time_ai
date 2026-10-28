@@ -13,15 +13,18 @@ from io import BytesIO
 
 
 from dotenv import load_dotenv
-from telegram import Update, BotCommand
+from telegram import Update, BotCommand, InlineKeyboardButton, InlineKeyboardMarkup
 
 from telegram.ext import (
     Application,
     CommandHandler,
+    CallbackQueryHandler,
     MessageHandler,
     ContextTypes,
     filters,
 )
+
+from preferencias_usuario import obter_time, salvar_time
 
 print("Inicializando RAG, aguarde...")
 
@@ -353,10 +356,13 @@ async def receber_audio(
 
             modo = obter_modo_resposta(update.effective_user.id)
 
+            time_id = obter_time(update.effective_user.id)
+
             resposta = await asyncio.to_thread(
                 processar_pergunta,
                 pergunta,
-                modo
+                modo,
+                time_id
             )
 
             await enviar_resposta(
@@ -382,7 +388,20 @@ async def receber_audio(
 # ============================================================
 import  time
 
-def processar_pergunta(pergunta: str, modo_resposta: str = "texto") -> str:
+def processar_pergunta(
+    pergunta: str,
+    modo_resposta: str = "texto",
+    time_id: str = "flamengo"
+) -> str:
+
+    if time_id != "flamengo":
+        return (
+            "A base de conhecimento deste time ainda está em preparação. "
+            "Por enquanto, apenas o Flamengo está disponível para consultas."
+            "Use  /time para selecionar o Flamengo."
+        )
+
+
     
     inicio_total= time.perf_counter()
     t0 = time.perf_counter()
@@ -459,6 +478,7 @@ async def start(
     context: ContextTypes.DEFAULT_TYPE
 ):
     await update.message.reply_text(MENSAGEM_INICIAL)
+    await selecionar_time(update, context)
 
 
 async def ajuda(
@@ -468,12 +488,79 @@ async def ajuda(
     await update.message.reply_text(MENSAGEM_INICIAL)
 
 
+async def selecionar_time(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    teclado = [
+        [
+            InlineKeyboardButton(
+                "Flamengo",
+                callback_data="time:flamengo"
+            ),
+            InlineKeyboardButton(
+                "Santos",
+                callback_data="time:santos"
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                "Internacional",
+                callback_data="time:internacional"
+            ),
+            InlineKeyboardButton(
+                "Atlético Mineiro",
+                callback_data="time:atletico_mineiro"
+            ),
+        ],
+    ]
+
+    time_atual = obter_time(update.effective_user.id)
+
+    await update.message.reply_text(
+        f"Seu time atual: {time_atual.replace('_', ' ').title()}\n"
+        "Escolha o time que deseja acompanhar:",
+        reply_markup=InlineKeyboardMarkup(teclado)
+    )
+
+
+async def confirmar_time(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+):
+    query = update.callback_query
+    await query.answer()
+
+    time_id = query.data.removeprefix("time:")
+
+    nomes = {
+        "flamengo": "Flamengo",
+        "santos": "Santos",
+        "internacional": "Internacional",
+        "atletico_mineiro": "Atlético Mineiro",
+    }
+
+    if time_id not in nomes:
+        await query.edit_message_text(
+            "Seleção inválida. Use /time para tentar novamente."
+        )
+        return
+
+    salvar_time(query.from_user.id, time_id)
+
+    await query.edit_message_text(
+        f"✅ Time selecionado: {nomes[time_id]}\n"
+        "Agora você pode enviar suas perguntas."
+    )
+
+
 async def configurar_comandos(application):
     await application.bot.set_my_commands([
         BotCommand("start", "Iniciar o Meu Time IA"),
         BotCommand("texto", "Receber respostas em texto"),
         BotCommand("audio", "Receber respostas em áudio"),
         BotCommand("ajuda", "Mostrar os comandos"),
+        BotCommand("time", "Escolher seu time"),
     ])
 
 # ============================================================
@@ -515,10 +602,13 @@ async def receber_mensagem(
 
         modo = obter_modo_resposta(update.effective_user.id)
 
+        time_id = obter_time(update.effective_user.id)
+
         resposta = await asyncio.to_thread(
             processar_pergunta,
             pergunta,
-            modo
+            modo,
+            time_id
         )
 
         await enviar_resposta(
@@ -593,6 +683,17 @@ def main():
 
     application.add_handler(
         CommandHandler("ajuda", ajuda)
+    )
+
+    application.add_handler(
+        CommandHandler("time", selecionar_time)
+    )
+
+    application.add_handler(
+        CallbackQueryHandler(
+            confirmar_time,
+            pattern=r"^time:"
+        )
     )
     
     
