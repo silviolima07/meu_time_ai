@@ -5,6 +5,8 @@
 
 ## Identificação
 
+Fontes: FLA-HIS-001
+
 - Nome: Clube de Regatas do Flamengo
 - Cidade: Rio de Janeiro (RJ)
 - Cores: vermelho e preto
@@ -13,6 +15,8 @@
 
 ## Fundação
 
+Fontes: FLA-HIS-001, FLA-HIS-002, FLA-HIS-003
+
 O Flamengo nasceu ligado ao remo. Em novembro de 1895, um grupo de jovens do bairro do Flamengo organizou a criação de um grupo de regatas. A reunião de fundação ocorreu em 17 de novembro de 1895, na Praia do Flamengo, e foi definido que a data oficial de fundação seria 15 de novembro.
 
 As primeiras cores do clube eram azul e amarelo-ouro. Em 1896, elas foram substituídas por vermelho e preto, combinação que se tornaria uma das marcas mais conhecidas do clube.
@@ -20,6 +24,8 @@ As primeiras cores do clube eram azul e amarelo-ouro. Em 1896, elas foram substi
 Em 1902, a instituição passou a usar o nome Clube de Regatas do Flamengo.
 
 ## Início do futebol
+
+Fontes: FLA-HIS-002, FLA-HIS-005
 
 O futebol entrou na história rubro-negra em 1911. Um grupo de jogadores deixou o Fluminense após um desentendimento interno e procurou o Flamengo para criar um departamento de futebol.
 
@@ -49,6 +55,8 @@ A geração também contou com nomes como Júnior, Leandro, Andrade, Adílio, Nu
 
 ## 1981 — Libertadores e Mundial
 
+Fontes: FLA-HIS-014, FLA-HIS-015
+
 O ano de 1981 é um dos mais importantes da história do Flamengo.
 
 O clube conquistou pela primeira vez a Copa Libertadores da América e, no mesmo ano, venceu o Mundial Interclubes.
@@ -61,31 +69,45 @@ Além da geração de 1981, o Flamengo teve diversos períodos de destaque.
 
 ### 1992
 
+Fontes: FLA-HIS-008
+
 O clube conquistou o Campeonato Brasileiro de 1992 com uma equipe que combinava jovens talentos e jogadores experientes. Júnior, um dos maiores ídolos do clube, foi um dos líderes daquela campanha.
 
 ### 2009
+
+Fontes: FLA-HIS-009
 
 O Flamengo conquistou o Campeonato Brasileiro de 2009 após uma grande arrancada no segundo turno. A equipe era comandada pelo técnico Andrade e tinha Adriano como uma das principais referências.
 
 ### 2019
 
+Fontes: FLA-HIS-006
+
 A temporada de 2019 marcou o início de uma nova fase de grande sucesso esportivo. O Flamengo conquistou a Copa Libertadores e o Campeonato Brasileiro no mesmo ano.
 
 ### 2022
+
+Fontes: FLA-HIS-012
 
 O Flamengo voltou a conquistar a Copa Libertadores e também venceu a Copa do Brasil.
 
 ### 2025
 
+Fontes: FLA-HIS-014
+
 Em 2025, o Flamengo conquistou novamente a Copa Libertadores e o Campeonato Brasileiro, ampliando sua coleção de títulos nacionais e internacionais.
 
 ## Maracanã
+
+Fontes: FLA-HIS-010
 
 O Maracanã é fortemente associado à história do Flamengo, embora não pertença ao clube.
 
 Grandes decisões, títulos e recordes rubro-negros aconteceram no estádio. Zico também construiu parte importante de sua história no Maracanã e é um dos maiores artilheiros da história do estádio.
 
 ## Centro de treinamento
+
+Fontes: FLA-HIS-007
 
 O futebol profissional utiliza o CT George Helal, conhecido popularmente como Ninho do Urubu, em Vargem Grande, no Rio de Janeiro.
 

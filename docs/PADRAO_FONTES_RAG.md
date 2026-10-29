@@ -59,3 +59,20 @@ Cada fonte deve conter:
 - Auditar as referências históricas do Flamengo e do Santos.
 - Validar a preservação dos metadados nos índices de recuperação.
 - Não regenerar os índices de produção antes da validação completa.
+
+## Hierarquia de fontes por assunto
+
+- História institucional: site oficial do clube, museu e documentos históricos.
+- Competições nacionais: CBF e regulamentos oficiais.
+- Competições internacionais: CONMEBOL e FIFA.
+- Estatísticas históricas: registros oficiais e publicações especializadas verificáveis.
+- Informações atuais: fontes oficiais com data de atualização.
+
+## Critérios de validação
+
+1. A URL deve estar acessível.
+2. O conteúdo deve sustentar explicitamente a afirmação.
+3. Registrar a data da consulta.
+4. Identificar quais afirmações são sustentadas por cada fonte.
+5. Manter como pendentes as informações sem comprovação.
+6. Não confundir uma fonte institucional confiável com uma evidência específica.
