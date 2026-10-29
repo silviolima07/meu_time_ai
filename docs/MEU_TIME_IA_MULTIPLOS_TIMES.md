@@ -169,3 +169,249 @@ A primeira etapa da evolução para múltiplos times foi implementada e validada
 A seleção de clubes, a persistência SQLite e a proteção contra consultas a bases indisponíveis estão operacionais.
 
 A próxima etapa será implementar o RAG multiclubes, com bases independentes e recuperação direcionada ao clube selecionado.
+
+## 12. Implementação e validação do BM25 multiclubes
+
+### 12.1 Objetivo
+
+Adaptar a recuperação lexical BM25 para aceitar um identificador de clube (`time_id`), preservando o comportamento original do Flamengo e preparando o sistema para índices independentes de Santos, Internacional e Atlético Mineiro.
+
+Esta etapa modifica `scripts/rag_core.py`, sem alterar o corpus ou os índices existentes do Flamengo.
+
+### 12.2 Seleção dos recursos BM25
+
+Foi criada a função `obter_recursos_bm25(time_id="flamengo")`.
+
+Seu funcionamento é:
+
+1. Para `flamengo`, reutiliza o índice BM25 e os documentos já carregados na memória.
+2. Para os outros três clubes cadastrados, procura os arquivos em `dados_processados/times/<time_id>/bm25/`.
+3. Para um identificador desconhecido, lança `ValueError`.
+4. Se os arquivos de índice ou documentos ainda não existem, lança `FileNotFoundError`.
+5. Quando os arquivos existem, carrega o índice e os documentos correspondentes.
+
+A função `busca_bm25()` passou a aceitar um parâmetro opcional `time_id`, mantendo `flamengo` como valor padrão.
+
+Essa escolha preserva as chamadas anteriores, incluindo aquelas utilizadas no benchmark original. Os recursos de outros clubes são carregados sob demanda, sem substituir o índice global do Flamengo.
+
+### 12.3 Verificação estática
+
+Comando executado:
+
+```bash
+python3 -m py_compile scripts/rag_core.py && git diff --check && git diff --stat
+```
+
+O que cada parte verifica:
+
+- `python3 -m py_compile`: compila o arquivo Python para verificar erros de sintaxe, sem executar o pipeline RAG.
+- `git diff --check`: identifica problemas de whitespace nas alterações versionadas.
+- `git diff --stat`: apresenta um resumo dos arquivos e linhas modificados.
+
+Resultado observado:
+
+```text
+scripts/rag_core.py | 46 +++++++++++++++++++++++++++++++++++++++++++---
+1 file changed, 43 insertions(+), 3 deletions(-)
+```
+
+**Resultado: aprovado.** Nenhum erro de sintaxe ou whitespace foi identificado.
+
+### 12.4 Preparação do ambiente de execução
+
+Na primeira tentativa do teste funcional, o Python do sistema apresentou:
+
+```text
+ModuleNotFoundError: No module named 'chromadb'
+```
+
+A causa foi a execução fora do ambiente virtual do projeto. Não foi necessário instalar novamente a biblioteca.
+
+O ambiente virtual existente foi identificado e ativado com:
+
+```bash
+source .venv/bin/activate
+```
+
+Após a ativação, o teste foi executado com `python`, utilizando as dependências do projeto.
+
+### 12.5 Teste funcional de compatibilidade e isolamento
+
+Código executado a partir da raiz do repositório, com `.venv` ativado:
+
+```bash
+python - <<'PY'
+import sys
+sys.path.insert(0, "scripts")
+
+from rag_core import busca_bm25
+
+pergunta = "Quais são os títulos do Flamengo?"
+
+antigo = busca_bm25(pergunta)
+novo = busca_bm25(pergunta, time_id="flamengo")
+
+assert antigo == novo, "ERRO: resultados diferentes para o Flamengo"
+
+print("[OK] Compatibilidade com Flamengo preservada.")
+print("Resultados:", len(novo))
+print("Chunks:", [r["chunk_id"] for r in novo])
+
+try:
+    busca_bm25(pergunta, time_id="santos")
+except FileNotFoundError:
+    print("[OK] Santos sem índice: consulta bloqueada corretamente.")
+else:
+    raise AssertionError("Santos não deveria utilizar um índice inexistente.")
+PY
+```
+
+Explicação das verificações:
+
+- A importação de `rag_core` carrega os recursos necessários do pipeline, incluindo BM25, ChromaDB e o modelo de embeddings.
+- `antigo` representa a chamada original, sem especificar o clube.
+- `novo` representa a chamada com `time_id="flamengo"`.
+- `assert antigo == novo` exige igualdade completa dos resultados retornados pelas duas chamadas para a pergunta testada.
+- A consulta ao Santos verifica se o sistema recusa corretamente a utilização de um índice ainda inexistente, em vez de recuperar documentos do Flamengo.
+- A captura de `FileNotFoundError` confirma que essa indisponibilidade é tratada como uma condição esperada no teste.
+
+### 12.6 Evidências e resultados
+
+Saída observada:
+
+```text
+Carregando BM25...
+[OK] BM25 carregado.
+Carregando ChromaDB...
+[OK] Chroma carregado (72 registros).
+Carregando modelo de embeddings...
+[OK] Modelo carregado.
+[OK] Compatibilidade com Flamengo preservada.
+Resultados: 5
+Chunks: [11, 1, 55, 70, 48]
+[OK] Santos sem índice: consulta bloqueada corretamente.
+```
+
+A linha de progresso do carregamento dos pesos do modelo foi omitida da transcrição acima por não alterar o resultado do teste.
+
+| Verificação | Resultado |
+|---|---|
+| Sintaxe de `rag_core.py` | Aprovado |
+| Whitespace das alterações | Aprovado |
+| Carregamento dos recursos do RAG | Aprovado |
+| Igualdade entre chamadas BM25 antiga e nova | Aprovado |
+| Quantidade de resultados BM25 | 5 |
+| IDs dos chunks retornados | 11, 1, 55, 70, 48 |
+| Consulta ao Santos sem índice | `FileNotFoundError`, conforme esperado |
+
+### 12.7 Alcance e limitações da validação
+
+O teste confirma a compatibilidade da busca BM25 do Flamengo para uma pergunta específica e o bloqueio de uma consulta a um clube sem índice.
+
+Ele ainda **não comprova**:
+
+- Equivalência para todas as perguntas do benchmark original.
+- Funcionamento de índices BM25 já construídos para os outros clubes.
+- Roteamento da busca vetorial por coleção ChromaDB.
+- Roteamento da recuperação híbrida BM25 + ChromaDB + RRF.
+- Qualidade da recuperação medida por Recall@K, Precision@K e outras métricas.
+- Desempenho e consumo de memória com múltiplos clubes.
+
+A próxima etapa é adaptar a busca vetorial para selecionar a coleção correspondente ao `time_id`, mantendo um único modelo de embeddings compartilhado.
+
+**Estado ao final desta etapa:** adaptação do BM25 implementada e teste funcional pontual aprovado; integração vetorial e benchmark multiclubes pendentes.
+
+### 12.9 Execução dos testes automatizados
+
+Os testes funcionais foram salvos em `tests/test_roteamento_times.py`, utilizando a biblioteca padrão `unittest` do Python.
+
+Com o ambiente virtual `.venv` ativado, executar na raiz do repositório:
+
+```bash
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+O comando identifica os arquivos `test_*.py` no diretório `tests`, executa os métodos de teste e apresenta os resultados detalhados (`-v`).
+
+**Resultado observado em 28/10/2026:**
+
+| Teste | Resultado |
+|---|---|
+| `test_bm25_compatibilidade_flamengo` | Aprovado |
+| `test_bm25_santos_sem_indice` | Aprovado |
+| `test_clube_invalido` | Aprovado |
+| `test_vetorial_compatibilidade_flamengo` | Aprovado |
+| `test_vetorial_santos_sem_colecao` | Aprovado |
+
+```text
+Ran 5 tests in 41.414s
+
+OK
+```
+
+Os cinco testes passaram sem falhas. O modelo de embeddings foi carregado uma única vez durante a execução.
+
+Esses testes verificam compatibilidade e tratamento de recursos indisponíveis. Não avaliam Recall@K, Precision@K ou qualidade das respostas geradas pela LLM.
+
+Os testes que esperam ausência de índices ou coleções do Santos deverão ser atualizados quando esses recursos forem implementados.
+
+### 12.10 Validação da recuperação híbrida multiclubes
+
+A função `busca_hibrida()` foi adaptada para receber o parâmetro opcional `time_id`, com valor padrão `"flamengo"`.
+
+Esse identificador é encaminhado às funções `busca_bm25()` e `busca_vetorial()`. O algoritmo Reciprocal Rank Fusion (RRF) e seus parâmetros permanecem inalterados.
+
+Foi acrescentado ao arquivo `tests/test_roteamento_times.py` o teste automatizado `test_hibrida_compatibilidade_flamengo`.
+
+O teste compara:
+
+```python
+antigo = busca_hibrida(pergunta)
+novo = busca_hibrida(pergunta, time_id="flamengo")
+
+assert antigo == novo
+```
+
+O objetivo é verificar se a introdução do parâmetro `time_id` preserva os resultados da recuperação híbrida para a pergunta testada.
+
+**Comando de execução:**
+
+```bash
+python -m unittest discover -s tests -p 'test_*.py' -v
+```
+
+**Resultado observado em 28/10/2026:**
+
+```text
+Ran 6 tests in 121.416s
+
+OK
+```
+
+Todos os seis testes foram aprovados.
+
+Esta validação confirma a compatibilidade funcional nas condições testadas, mas ainda não verifica a recuperação de documentos de outros clubes, pois seus índices não foram construídos.
+
+O benchmark original de 15 perguntas e respostas sobre o Flamengo permanece independente desta etapa.
+
+### Testes de integração Telegram → RAG
+
+**Script:** `tests/test_integracao_telegram_rag.py`
+
+**Objetivo:** validar o encaminhamento do `time_id` e o bloqueio de consultas a clubes sem base de conhecimento disponível.
+
+**Estratégia:** testes automatizados com `unittest` e `unittest.mock`. A função `processar_pergunta()` é extraída com `ast`, evitando importar o módulo completo do Telegram e carregar Whisper, embeddings ou acessar a API da Groq.
+
+**Comando de execução:**
+
+```bash
+python -m unittest discover -s tests -p 'test_integracao_telegram_rag.py' -v
+
+```
+
+**Resultados:** 2 testes aprovados em 0,022 s.
+
+- Flamengo: encaminhamento do time_id confirmado.
+- Santos: bloqueio de consulta sem executar RAG ou LLM confirmado.
+
+**Limitação:** testes com dependências simuladas; não substituem testes reais com Telegram.

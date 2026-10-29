@@ -413,7 +413,8 @@ def processar_pergunta(
 
     # Retrieval
     resultados = busca_hibrida(
-        pergunta
+        pergunta,
+        time_id=time_id
     )
 
     # Contexto

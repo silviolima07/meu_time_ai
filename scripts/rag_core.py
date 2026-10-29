@@ -230,19 +230,59 @@ print(
 
 
 # ============================================================
+# RECURSOS BM25 POR CLUBE
+# ============================================================
+
+def obter_recursos_bm25(time_id: str = "flamengo"):
+    """Retorna o indice BM25 e os documentos do clube selecionado."""
+
+    if time_id == "flamengo":
+        return bm25, documentos_bm25
+
+    times_validos = {
+        "santos",
+        "internacional",
+        "atletico_mineiro"
+    }
+
+    if time_id not in times_validos:
+        raise ValueError(f"Time invalido: {time_id}")
+
+    pasta = ROOT / "dados_processados" / "times" / time_id / "bm25"
+    arquivo_indice = pasta / "bm25.pkl"
+    arquivo_documentos = pasta / "documentos_bm25.json"
+
+    if not arquivo_indice.is_file() or not arquivo_documentos.is_file():
+        raise FileNotFoundError(
+            f"Indice BM25 ainda nao disponivel para: {time_id}"
+        )
+
+    with open(arquivo_indice, "rb") as f:
+        indice = pickle.load(f)
+
+    with open(arquivo_documentos, "r", encoding="utf-8") as f:
+        documentos = json.load(f)
+
+    return indice, documentos
+
+
+# ============================================================
 # BUSCA BM25
 # ============================================================
 
 def busca_bm25(
     pergunta: str,
-    top_k: int = TOP_K_BM25
+    top_k: int = TOP_K_BM25,
+    time_id: str = "flamengo"
 ):
 
     tokens_pergunta = tokenizar(
         pergunta
     )
 
-    scores = bm25.get_scores(
+    indice_bm25, documentos = obter_recursos_bm25(time_id)
+
+    scores = indice_bm25.get_scores(
         tokens_pergunta
     )
 
@@ -260,7 +300,7 @@ def busca_bm25(
     ):
 
         documento = (
-            documentos_bm25[indice]
+            documentos[indice]
         )
 
         resultados.append(
@@ -292,10 +332,35 @@ def busca_bm25(
 # BUSCA VETORIAL
 # ============================================================
 
+# ============================================================
+# COLECAO CHROMADB POR CLUBE
+# ============================================================
+
+def obter_colecao(time_id: str = "flamengo"):
+    """Retorna a colecao vetorial do clube selecionado."""
+
+    if time_id == "flamengo":
+        return collection
+
+    times_validos = {
+        "santos",
+        "internacional",
+        "atletico_mineiro"
+    }
+
+    if time_id not in times_validos:
+        raise ValueError(f"Time invalido: {time_id}")
+
+    return client.get_collection(name=time_id)
+
+
 def busca_vetorial(
     pergunta: str,
-    top_k: int = TOP_K_VECTOR
+    top_k: int = TOP_K_VECTOR,
+    time_id: str = "flamengo"
 ):
+
+    colecao = obter_colecao(time_id)
 
     embedding_pergunta = modelo.encode(
         pergunta,
@@ -303,7 +368,7 @@ def busca_vetorial(
     ).tolist()
 
 
-    resultado = collection.query(
+    resultado = colecao.query(
         query_embeddings=[
             embedding_pergunta
         ],
@@ -535,16 +600,19 @@ def reciprocal_rank_fusion(
 
 def busca_hibrida(
     pergunta: str,
-    top_k_final: int = TOP_K_FINAL
+    top_k_final: int = TOP_K_FINAL,
+    time_id: str = "flamengo"
 ):
 
     resultados_bm25 = busca_bm25(
-        pergunta
+        pergunta,
+        time_id=time_id
     )
 
 
     resultados_vetoriais = busca_vetorial(
-        pergunta
+        pergunta,
+        time_id=time_id
     )
 
 
