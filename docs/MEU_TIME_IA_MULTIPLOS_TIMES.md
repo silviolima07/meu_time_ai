@@ -415,3 +415,60 @@ python -m unittest discover -s tests -p 'test_integracao_telegram_rag.py' -v
 - Santos: bloqueio de consulta sem executar RAG ou LLM confirmado.
 
 **Limitação:** testes com dependências simuladas; não substituem testes reais com Telegram.
+
+## 13. Registro de desenvolvimento — 29/10/2026
+
+**Branch:** `feature/multiplos-times`  
+**Último commit remoto confirmado:** `0c0389d`  
+**Escopo:** proveniência documental e preparação da indexação multiclubes.
+
+### 13.1 Entregas realizadas
+
+- Consolidada a auditoria de proveniência da história do Flamengo, com catálogo de fontes e registro de trechos sem evidência localizada, sem inventar referências.
+- Preparada a base histórica do Santos em `santos/historia.md`.
+- Criado o catálogo `docs/FONTES_HISTORIA_SANTOS.md`.
+- Validada a proveniência da história do Santos: **13 chunks**, sendo **11 com referências** e **2 estruturais sem referências**; **5 identificadores de fonte** presentes no catálogo.
+- Alterações do Santos registradas e enviadas à branch `feature/multiplos-times` no commit `0c0389d`.
+
+**Limite da validação:** a checagem de proveniência confirma a associação entre chunks, identificadores e catálogo; não equivale à verificação independente de todas as afirmações históricas.
+
+### 13.2 Diagnóstico do pipeline de ingestão e indexação
+
+A inspeção dos scripts `01` a `05` identificou caminhos e valores fixos associados ao Flamengo:
+
+| Script | Situação observada |
+|---|---|
+| `01_carregar_documentos.py` | Lê `flamengo/`, grava `dados_processados/documentos.json` e define `"time": "Flamengo"` |
+| `02_criar_chunks.py` | Usa `dados_processados/documentos.json` e grava `dados_processados/chunks/chunks.json` |
+| `03_gerar_embeddings.py` | Lê chunks do caminho compartilhado e grava embeddings e metadados em `dados_processados/embeddings/` |
+| `04_salvar_chroma.py` | Utiliza `NOME_COLECAO = "flamengo"` e remove a coleção de mesmo nome antes de recriá-la |
+| `05_criar_indice_bm25.py` | Lê chunks do caminho compartilhado e grava o índice em `dados_processados/bm25/` |
+
+O **roteamento de recuperação multiclubes já foi implementado** em `rag_core.py`, incluindo seleção de recursos BM25 e de coleção vetorial por `time_id`, além do encaminhamento na busca híbrida. O trabalho pendente é generalizar **a geração dos artefatos**, não reconstruir o roteamento.
+
+### 13.3 Decisão arquitetural para a próxima sessão
+
+O script `01_carregar_documentos.py` deverá **exigir** o identificador do clube na execução, aceitando exclusivamente:
+
+- `flamengo`
+- `santos`
+- `internacional`
+- `atletico_mineiro`
+
+Se o argumento estiver ausente ou não corresponder a um dos quatro identificadores, o script deverá apresentar uma mensagem clara, listar os valores permitidos e **encerrar sem processar nem sobrescrever arquivos**.
+
+A mesma configuração centralizada de clubes deverá ser reutilizada pelos scripts seguintes, evitando regras duplicadas. O pipeline de ingestão e indexação deverá utilizar saídas isoladas por clube, compatíveis com a estrutura de recuperação já implementada, incluindo `dados_processados/times/<time_id>/bm25/` para os índices BM25 dos clubes adicionais.
+
+**A interface de linha de comando ainda não foi implementada.** Exemplo de uso desejado após a refatoração: `python scripts/01_carregar_documentos.py --time santos`.
+
+### 13.4 Restrições e critérios de validação
+
+- Não executar os scripts de indexação atuais contra os caminhos compartilhados ou a coleção de produção.
+- Preservar os artefatos e serviços atuais do Flamengo.
+- Testar primeiro em homologação, com diretórios e recursos isolados.
+- Acrescentar testes para argumento ausente, time inválido, time válido e isolamento das saídas.
+- Reavaliar os testes que atualmente esperam ausência de índice ou coleção do Santos quando esses recursos forem criados.
+- Compartilhar o modelo de embeddings, respeitando a limitação de memória do servidor.
+- Só considerar concluída a integração do Santos após validar ingestão, chunking, embeddings, BM25, ChromaDB e recuperação híbrida.
+
+**Próxima atividade:** refatorar `01_carregar_documentos.py` para receber e validar o identificador do clube, sem alterar a produção.
